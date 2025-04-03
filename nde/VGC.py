@@ -14,11 +14,11 @@ class VGC(nn.Sequential):
     """ 
         Vector Gaussian copula
     """
-    def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs=2):
+    def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs=2, K=1):
         super().__init__()
-        self.maf1 = NAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
-        self.maf2 = NAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
-        self.base = MDN(n_in=2, n_hidden=10, n_out=2*n_inputs, K=1)
+        self.maf1 = MAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
+        self.maf2 = MAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
+        self.base = MDN(n_in=2, n_hidden=10, n_out=2*n_inputs, K=K)
         self.max_iteration = 200
         self.lr = 1e-3
         self.bs = 250
@@ -70,8 +70,10 @@ class VGC(nn.Sequential):
             optimizer.NNOptimizer.learn(self, x=x, y=y)
         with torch.no_grad():
             xx, yy = self.forward(x, y)
+        xy = torch.cat([xx, yy], dim=1)
+        xy = self.copula_transformation(xy)
         # [B]. learn the inner Gaussian 
-        self.mu, self.V = self.empirical_params(xx, yy)
+        self.mu, self.V = self.empirical_params(xy)
         self.mu2, self.V2 = self.mu.clone(), torch.eye(2*d).to(x.device)
         self.Vx, self.mx = self.V[0:d, 0:d], self.mu[0:d]
         self.Vy, self.my = self.V[d:, d:], self.mu[d:]
@@ -81,20 +83,50 @@ class VGC(nn.Sequential):
         self.normal_y = distribution.multivariate_normal.MultivariateNormal(self.my, self.Vy)
         return 
     
-    def empirical_params(self, x, y):
-        z = torch.cat([x, y], dim=1)
+    def empirical_params(self, z):
         n, d = z.size()
         mu = z.mean(dim=0, keepdim=True)
         V = (z-mu).t() @ (z-mu)/(n+1)
         return mu.view(-1), V
-
+    
+    
+    # copula transformation
+    def copula_transformation(self, z):
+        data = z
+        # calculate empirical CDF
+        sorted_data, idx = torch.sort(data, dim=0)
+        _, idx2 = torch.sort(idx, dim=0)
+        u = (idx2.float()+1)/(len(data)+1)    
+        zeros, ones = torch.zeros(data.size()).to(data.device), torch.ones(data.size()).to(data.device)
+        normal = distribution.Normal(zeros, ones)
+        # calculate the latent Z
+        z = normal.icdf(u)
+        n, d = z.size()
+        return z
+        
+    
+    # used in separate learning mode
     def MI(self, x, y, inner=True):
         if inner is False:
             x, y = self.forward(x, y)
         xy = torch.cat([x, y], dim=1)
+        xy = self.copula_transformation(xy)
         log_copula_density_xy = self.normal.log_prob(xy)
         log_copula_density_x = self.normal_x.log_prob(x)
         log_copula_density_y = self.normal_y.log_prob(y)       
+        mi = log_copula_density_xy - log_copula_density_x - log_copula_density_y
+        return mi.mean().item()
+    
+    # used in joint learning mode
+    def MI2(self, x, y, inner=True):
+        if inner is False:
+            x, y = self.forward(x, y)
+        xy = torch.cat([x, y], dim=1)
+        n, dx = x.size()
+        t = torch.ones(n, 2).to(xy.device)
+        log_copula_density_xy = self.base.log_probs(inputs=xy, cond_inputs=t)
+        log_copula_density_x = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[i for i in range(dx)])
+        log_copula_density_y = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[dx+i for i in range(dx)])       
         mi = log_copula_density_xy - log_copula_density_x - log_copula_density_y
         return mi.mean().item()
     

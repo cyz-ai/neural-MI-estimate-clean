@@ -137,6 +137,14 @@ class NonlinearGaussian(Dataset):
             B = torch.ones(d, d).tril()
             self.A, self.B = A, B
             x, y = torch.matmul(x, A), torch.matmul(y, B)  
+        if case == '3e':                                           # x, y = tanh(x), exp(y^3)
+            n, d = x.size()
+            n, d = x.size()
+            x, y = torch.tanh(x), 0.5*y**3 + 0.5*torch.exp(y)
+            A = torch.ones(d, d).tril()                             
+            B = torch.ones(d, d).tril()
+            self.A, self.B = A, B
+            x, y = torch.matmul(x, A), torch.matmul(y, B)  
         self.mu_x, self.mu_y = x.mean(dim=0, keepdim=True), y.mean(dim=0, keepdim=True)
         self.std_x, self.std_y = x.std(dim=0, keepdim=True), y.std(dim=0, keepdim=True)
         return x, y                                                 #return standardize(x), standardize(y)

@@ -29,7 +29,9 @@ class MIENF(nn.Module):
         self.n_neg = 4 if not hasattr(hyperparams, 'n_neg') else hyperparams.n_neg
         self.encode_x = False if not hasattr(hyperparams, 'encode_x') else hyperparams.encode_x
         self.encode_y = False if not hasattr(hyperparams, 'encode_y') else hyperparams.encode_y
+        self.K_components = 1 if not hasattr(hyperparams, 'K_components') else hyperparams.K_components
         self.max_iteration = 1500 if not hasattr(hyperparams, 'max_iteration') else hyperparams.max_iteration
+        self.joint_learning = True if not hasattr(hyperparams, 'joint_learning') else hyperparams.joint_learning
         
         # layers
         self.encode_layer = None
@@ -47,6 +49,7 @@ class MIENF(nn.Module):
         self.eval()
         with torch.no_grad(): 
             v, w = self.gc.forward(x, y)
+            #return self.gc.MI(v, w) if not self.joint_learning else self.gc.MI2(v, w)
             return self.gc.MI(v, w)
 
     def learn(self, x, y):
@@ -58,11 +61,17 @@ class MIENF(nn.Module):
         n, d = x.size()
     
         # Neural density estimate
-        gc = VGC(n_blocks=2, n_inputs=d, n_hidden=500, n_cond_inputs=2)              # MIENF jointly train the whole model; note that FM is not suitable here.
+        gc = VGC(n_blocks=2, n_inputs=d, n_hidden=250, n_cond_inputs=2, K=self.K_components)      
         gc.to(x.device)
-        gc.maf1.max_iteration = 0
-        gc.maf2.max_iteration = 0
-        gc.max_iteration = 2500
+        print('joint training?', self.joint_learning, '\n')
+        if self.joint_learning:
+            gc.maf1.max_iteration = 0
+            gc.maf2.max_iteration = 0
+            gc.max_iteration = 2000
+        else:
+            gc.maf1.max_iteration = 2000
+            gc.maf2.max_iteration = 2000
+            gc.max_iteration = 0
         gc.bs = 250
         gc.to(x.device)
         gc.learn(x, y)

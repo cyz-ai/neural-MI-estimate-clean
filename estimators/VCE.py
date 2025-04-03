@@ -35,7 +35,8 @@ class VCE(nn.Module):
         d = architecture_critic[0]
         self.gc = None
         self.mog = MGC(d=d//2, K=self.K_components)
-        print('K components=', self.K_components)
+        self.mog.forwarding = True
+        print('K components=', self.K_components, 'copula transform=', self.mog.forwarding)
         
 
     def MI(self, x, y, mode='mc'):
@@ -65,6 +66,17 @@ class VCE(nn.Module):
         # B. learn copula
         self.mog.load_state_dict(self.mog_init_state_dict)
         self.mog.learn(v, w)
+        
+    def learn_mog(self, x, y, K=5, forwarding=False):
+        # only for debug
+        n, d = x.size()
+        self.mog = MGC(d=d, K=K).to(x.device)
+        self.mog.forwarding = forwarding
+        with torch.no_grad():
+            v, w = self.gc.forward(x, y)
+            v, w = v.clone().detach(), w.clone().detach()
+        self.mog.learn(v, w)
+        
 
     def learn_flow(self, x, y):
         n, d = x.size()

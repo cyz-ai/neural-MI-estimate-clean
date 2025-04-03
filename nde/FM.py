@@ -115,8 +115,9 @@ class NFM(nn.Module):
 
         model_param = {
             'd_in': n_inputs,
-            'rtdl_params': {'d_layers': [1024, 2048, 2048, 1024], 'dropout': 0.0}
-            #'rtdl_params': {'d_layers': [512, 1024, 1024, 512], 'dropout': 0.0}
+            'rtdl_params': {'d_layers': [256, 512, 512, 256], 'dropout': 0.0}
+            #'rtdl_params': {'d_layers': [1024, 2048, 2048, 1024], 'dropout': 0.0}
+           
         }
         self.model = MLPFlow(**model_param)
         self.cfm = ConditionalFlowMatcher()

@@ -157,14 +157,14 @@ class MGC(nn.Module):
         self.forwarding = False
         
     def learn(self, x, y):
-        t0 = time.time()
         xy = torch.cat([x, y], dim=1)
         n, d = xy.size()
+        # compute ranks
         x, y = self.forward(x, y)
         z = torch.cat([x, y], dim=1)
         # fit mog on Z
         self.mog.learn(inputs=z, cond_inputs=torch.ones_like(z), shuffle=True)
-        print('K=', self.mog.K, 'time used:', time.time()-t0)
+        print('K components=', self.mog.K, 'finished')
         
     # def learn2(self, x, y):
     #     xy = torch.cat([x, y], dim=1)
