@@ -86,8 +86,8 @@ class VCE(nn.Module):
         if self.nde_type == 'VGC':
             gc = VGC(n_blocks=2, n_inputs=d, n_hidden=500, n_cond_inputs=2)
             gc.to(x.device)
-            gc.maf1.max_iteration = 200
-            gc.maf2.max_iteration = 200
+            gc.maf1.max_iteration = 1000
+            gc.maf2.max_iteration = 1000
             gc.max_iteration = 0
             gc.bs = 200
         if self.nde_type == 'FM':

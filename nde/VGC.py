@@ -16,8 +16,8 @@ class VGC(nn.Sequential):
     """
     def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs=2, K=1):
         super().__init__()
-        self.maf1 = MAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
-        self.maf2 = MAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
+        self.maf1 = NAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
+        self.maf2 = NAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
         self.base = MDN(n_in=2, n_hidden=10, n_out=2*n_inputs, K=K)
         self.max_iteration = 200
         self.lr = 1e-3
