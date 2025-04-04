@@ -11,6 +11,7 @@ Implemented estimators:
 - DoE
 - MIENF
 - MINDE
+- SMILE
 - VCE (ours)
 
 

@@ -26,7 +26,6 @@ class MIENF(nn.Module):
         self.bs = 500 if not hasattr(hyperparams, 'bs') else hyperparams.bs 
         self.lr = 5e-4 if not hasattr(hyperparams, 'lr') else hyperparams.lr
         self.wd = 0e-5 if not hasattr(hyperparams, 'wd') else hyperparams.wd
-        self.n_neg = 4 if not hasattr(hyperparams, 'n_neg') else hyperparams.n_neg
         self.encode_x = False if not hasattr(hyperparams, 'encode_x') else hyperparams.encode_x
         self.encode_y = False if not hasattr(hyperparams, 'encode_y') else hyperparams.encode_y
         self.K_components = 1 if not hasattr(hyperparams, 'K_components') else hyperparams.K_components
@@ -36,6 +35,7 @@ class MIENF(nn.Module):
         # layers
         self.encode_layer = None
         self.encode2_layer = None
+        print('K components', self.K_components, 'joint learning', self.joint_learning, '\n')
   
     def encode(self, x):
         # s = s(x), get the summary statistic of x
@@ -49,32 +49,52 @@ class MIENF(nn.Module):
         self.eval()
         with torch.no_grad(): 
             v, w = self.gc.forward(x, y)
-            #return self.gc.MI(v, w) if not self.joint_learning else self.gc.MI2(v, w)
             return self.gc.MI(v, w)
 
     def learn(self, x, y):
         gc = self.learn_nde(x, y)
         self.gc = gc
         self.gc_state_dict = deepcopy(gc.state_dict())
-   
+        
+    def _relearn_copula(self, x, y, K, existing_gc):
+        n, d = x.size()
+        print('relearn copula K=', K)
+        gc = VGC(n_blocks=2, n_inputs=d, n_hidden=250, n_cond_inputs=2, K=K) 
+        gc.maf1.load_state_dict(deepcopy(existing_gc.maf1.state_dict()))
+        gc.maf2.load_state_dict(deepcopy(existing_gc.maf2.state_dict()))
+        gc.freeze_marginal = True
+        gc.maf1.max_iteration = 0
+        gc.maf2.max_iteration = 0
+        gc.max_iteration = 2000
+        gc.bs = 2500
+        gc.to(x.device)
+        gc.learn(x, y)
+        self.gc = gc
+        return
+        
     def learn_nde(self, x, y):
         n, d = x.size()
     
         # Neural density estimate
         gc = VGC(n_blocks=2, n_inputs=d, n_hidden=250, n_cond_inputs=2, K=self.K_components)      
         gc.to(x.device)
-        print('joint training?', self.joint_learning, '\n')
+        gc.bs = 250
         if self.joint_learning:
             gc.maf1.max_iteration = 0
             gc.maf2.max_iteration = 0
             gc.max_iteration = 2000
+            gc.learn(x, y)
         else:
             gc.maf1.max_iteration = 2000
             gc.maf2.max_iteration = 2000
             gc.max_iteration = 0
-        gc.bs = 250
-        gc.to(x.device)
-        gc.learn(x, y)
+            gc.learn(x, y)
+            gc.freeze_marginal = True
+            gc.maf1.max_iteration = 0
+            gc.maf2.max_iteration = 0
+            gc.max_iteration = 1000
+            gc.bs = 2500
+            gc.learn(x, y)
         return gc
 
     

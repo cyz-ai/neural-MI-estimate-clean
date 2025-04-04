@@ -130,7 +130,10 @@ class MultivariateStudentT():
             self.dim_total,
         ), f"Wrong shape: {xy.shape} != {(n_points, self.dim_total)}."
 
-        return xy[:, : self.dim_x], xy[:, self.dim_x :]  # noqa: E203 colon spacing conventions
+        x, y = xy[:, : self.dim_x], xy[:, self.dim_x :]  # noqa: E203 colon spacing conventions
+        mu_x, std_x, mu_y, std_y = x.mean(axis=0, keepdims=True), x.std(axis=0, keepdims=True), y.mean(axis=0, keepdims=True), y.std(axis=0, keepdims=True)
+        return (x-mu_x)/std_x, (y-mu_y)/std_y
+        
 
     @property
     def df(self) -> int:

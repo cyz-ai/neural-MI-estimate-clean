@@ -32,7 +32,7 @@ class NNOptimizer(nn.Module):
         lr = 5e-4 if not hasattr(net, 'lr') else net.lr
         wd = 0e-5 if not hasattr(net, 'wd') else net.wd
         PRINTING = True if not hasattr(net, 'trace_learning') else net.trace_learning  
-        T_NO_IMPROVE_THRESHOLD = 150 if not hasattr(net, 't_patience') else net.t_patience
+        T_NO_IMPROVE_THRESHOLD = 200 if not hasattr(net, 't_patience') else net.t_patience
         
         # divide train & val 
         n = len(x)
@@ -84,39 +84,3 @@ class NNOptimizer(nn.Module):
         # return the best snapshot in the history
         net.load_state_dict(best_model_state_dict)
         return best_val_loss
-    
-    
-    
-    
-    
-    
-#     def learn2(self, inputs, cond_inputs):    
-#         net, x, y = self, inputs, cond_inputs
-#         # hyperparams 
-#         T = 2000 if not hasattr(net, 'max_iteration') else net.max_iteration 
-#         bs = 200 if not hasattr(net, 'bs') else net.bs 
-#         lr = 5e-4 if not hasattr(net, 'lr') else net.lr
-#         wd = 0e-5 if not hasattr(net, 'wd') else net.wd
-
-#         # learn in loops
-#         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=lr, weight_decay=wd)
-#         n_batch = int(len(x)/bs)
-
-#         for t in range(T):
-#             # shuffle the batch
-#             idx = torch.randperm(len(x)) 
-#             x_chunks, y_chunks = torch.chunk(x[idx], n_batch), torch.chunk(y[idx], n_batch)
-
-#             # gradient descend
-#             net.train()
-#             for i in range(len(x_chunks)):
-#                 optimizer.zero_grad()
-#                 loss = -net.objective_func(x_chunks[i], y_chunks[i])
-#                 loss.backward()
-#                 optimizer.step()
-                
-#             # report
-#             if t%(T//20+1) == 0: 
-#                print('finished: t=', t, 'loss=', loss.item())
-#         print('\n')
-#         return loss.item()
