@@ -130,34 +130,6 @@ class VGC(nn.Sequential):
         mi = log_copula_density_xy - log_copula_density_x - log_copula_density_y
         return mi.mean().item()
         
-#     # used in separate learning mode
-#     def MI(self, x, y, inner=True):
-#         if inner is False:
-#             x, y = self.forward(x, y)
-#         xy = torch.cat([x, y], dim=1)
-#         xy = self.copula_transformation(xy)
-#         log_copula_density_xy = self.normal.log_prob(xy)
-#         log_copula_density_x = self.normal_x.log_prob(x)
-#         log_copula_density_y = self.normal_y.log_prob(y)       
-#         mi = log_copula_density_xy - log_copula_density_x - log_copula_density_y
-#         return mi.mean().item()
-    
-#     # used in joint learning mode
-#     def MI2(self, x, y, inner=True):
-#         if inner is False:
-#             x, y = self.forward(x, y)
-#         xy = torch.cat([x, y], dim=1)
-#         n, dx = x.size()
-#         t = torch.ones(n, 2).to(xy.device)
-#         log_copula_density_xy = self.base.log_probs(inputs=xy, cond_inputs=t)
-#         log_copula_density_x = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[i for i in range(dx)])
-#         log_copula_density_y = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[dx+i for i in range(dx)])       
-#         mi = log_copula_density_xy - log_copula_density_x - log_copula_density_y
-#         return mi.mean().item()
-    
     def print(self):
         print('mu=', self.mu)
         print('V=',  (self.V*100).int()/100.0)
-
-
-    #optimizer.NNOptimizer.learn(self, x=x, y=y)
