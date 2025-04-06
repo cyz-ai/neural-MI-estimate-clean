@@ -21,4 +21,6 @@ Included benchmarks:
 - Mixture of Gaussians
 - Multivariate Student-t
 - Swiss Roll 
-- Image-like benchmarks
+- Spiral transformation
+- Image-like dataset
+- Biological sequence (coming soon)
