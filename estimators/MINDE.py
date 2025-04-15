@@ -6,7 +6,7 @@ import optimizer
 from estimators.minde.diffusion import VP_SDE
 from estimators.layers.UnetMLP import UnetMLP_simple
 
-from estimators.minde.diff_utils import concat_vect, deconcat, marginalize_data, cond_x_data
+from estimators.minde.diff_utils import concat_vect, deconcat, marginalize_data, cond_x_data, EMA
 from estimators.minde.info_measures import mi_cond, mi_cond_sigma, mi_joint, mi_joint_sigma
 
 class MINDE(nn.Module):
@@ -23,18 +23,19 @@ class MINDE(nn.Module):
         
         # hyperparameters
         self.bs = 250 if not hasattr(hyperparams, 'bs') else hyperparams.bs 
-        self.lr = 5e-4 if not hasattr(hyperparams, 'lr') else hyperparams.lr
-        self.wd = 0e-5 if not hasattr(hyperparams, 'wd') else hyperparams.wd
+        self.lr = 1e-3                                                         # <-- following original MINDE paper, overriding lr
+        self.wd = 0e-5                                                         # <-- following original MINDE paper, overriding wd
         self.max_iteration = 1500 if not hasattr(hyperparams, 'max_iteration') else hyperparams.max_iteration
         self.early_stop = True if not hasattr(hyperparams, 'early_stop') else hyperparams.early_stop
         self.t_patience = 500 if not hasattr(hyperparams, 't_patience') else hyperparams.t_patience
         self.device = 'cuda:0' if not hasattr(hyperparams, 'device') else hyperparams.device
 
-        self.type = 'j' if not hasattr(hyperparams, 'type') else hyperparams.type
+        self.type = 'c' if not hasattr(hyperparams, 'type') else hyperparams.type
         self.arch = 'mlp' if not hasattr(hyperparams, 'arch') else hyperparams.arch
         self.sigma = 1.0 if not hasattr(hyperparams, 'sigma') else hyperparams.sigma
         self.mc_iter = 100 if not hasattr(hyperparams, 'mc_iter') else hyperparams.mc_iter
         self.importance_sampling = True if not hasattr(hyperparams, 'importance_sampling') else hyperparams.importance_sampling
+        self.use_ema = True if not hasattr(hyperparams, 'use_ema') else hyperparams.use_ema
         
 
         if hasattr(hyperparams, 'hidden_dim')==False or hyperparams.hidden_dim == None:
@@ -49,11 +50,16 @@ class MINDE(nn.Module):
             importance_sampling=self.importance_sampling,
             var_sizes=self.sizes,
             device=self.device,
+            type =self.type
         )
+        self.model_ema = EMA(self.score, decay=0.999) if self.use_ema else None
+        print('use ema:', self.use_ema, 'bs:', self.bs)
 
     def objective_func(self, x, y):
         batch = [x, y]
         loss = self.sde.train_step(batch, self.score_forward).mean()
+        if self.model_ema and self.training:
+            self.model_ema.update(self.score)
         return -loss    # objective function is negative loss
 
     def learn(self, x, y):
@@ -89,7 +95,6 @@ class MINDE(nn.Module):
             z_t = deconcat(z_t, self.var_list, self.sizes)
             
             if self.type =="c":
-              
                 s_marg, s_cond = self.infer_scores(z_t,t, data_0, std_w, marg_masks, cond_mask)
                 
                 mi.append(
@@ -162,7 +167,7 @@ class MINDE(nn.Module):
         """
         # Get the model to use for inference, use the ema model if use_ema is set to True
 
-        score = self.score
+        score = self.model_ema.module if self.use_ema else self.score
         with torch.no_grad():
             score.eval()
             
