@@ -23,4 +23,4 @@ Included benchmarks:
 - Swiss Roll 
 - Spiral transformation
 - Image-like dataset
-- Biological sequence (coming soon)
+- Biological sequence
