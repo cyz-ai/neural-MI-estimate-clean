@@ -8,6 +8,7 @@ Implemented estimators:
 - MINE
 - InfoNCE
 - MRE
+- f-DIME
 - DoE
 - MIENF
 - MINDE
@@ -22,5 +23,5 @@ Included benchmarks:
 - Multivariate Student-t
 - Swiss Roll 
 - Spiral transformation
-- Image-like dataset
-- Biological sequence
+- Images with known MI
+- Resampled texts
