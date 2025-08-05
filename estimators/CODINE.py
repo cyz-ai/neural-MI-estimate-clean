@@ -12,9 +12,9 @@ from nde import GC
 
 
 
-class MINE_copula(nn.Module):
+class CODINE(nn.Module):
     """ 
-        Mutual information neural estimate with copula
+        Copula neural density estimate (MINE + copula)
     """
     def __init__(self, architecture_encoder_x, architecture_encoder_y, architecture_critic, hyperparams):
         super().__init__()
