@@ -9,10 +9,12 @@ Implemented estimators:
 - InfoNCE
 - MRE
 - f-DIME
-- DoE
-- MIENF
-- MINDE
 - SMILE
+- CODINE
+- Nonparametric copula MI
+- DoE
+- N-MIENF
+- MINDE
 - VCE (ours)
 
 
