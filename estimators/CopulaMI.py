@@ -16,9 +16,9 @@ from nde.VGC import VGC
 from nde.GC import GC
 
 
-class FastMI(nn.Module):
+class CopulaMI(nn.Module):
     """ 
-        Fast Copula-based MI estimation
+        Nonparanormal Information Estimation, ICML 2017
     """
     def __init__(self, architecture_encoder_x, architecture_encoder_y, architecture_critic, hyperparams):
         super().__init__()
@@ -33,19 +33,12 @@ class FastMI(nn.Module):
         
         # layers
         d = architecture_critic[0]
-        self.gc = None
-        self.mog = MGC(d=d//2, K=self.K_components)
-        self.mog.forwarding = True                                              # <-- this is copula-based
-        print('K components=', self.K_components)
-        
+        self.gc = GC()
 
     def MI(self, x, y, mode='mc'):
         self.eval()
         with torch.no_grad(): 
-            if mode == 'mc':
-                return self.mog.KL_joint_marginal(x, y)
-            else:
-                return self.mog.dv(x, y)
+            return self.gc.KL_joint_marginal(x, y, forwarding=True)
            
     def learn(self, x, y):
-        self.mog.learn(x, y)
+        self.gc.learn(x, y)
