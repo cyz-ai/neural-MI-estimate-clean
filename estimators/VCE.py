@@ -26,7 +26,6 @@ class VCE(nn.Module):
         self.bs = 500 if not hasattr(hyperparams, 'bs') else hyperparams.bs 
         self.lr = 5e-4 if not hasattr(hyperparams, 'lr') else hyperparams.lr
         self.wd = 0e-5 if not hasattr(hyperparams, 'wd') else hyperparams.wd
-        self.n_neg = 4 if not hasattr(hyperparams, 'n_neg') else hyperparams.n_neg
         self.nde_type = 'FM' if not hasattr(hyperparams, 'nde_type') else hyperparams.nde_type
         self.K_components = 5 if not hasattr(hyperparams, 'K_components') else hyperparams.K_components
         self.max_iteration = 1500 if not hasattr(hyperparams, 'max_iteration') else hyperparams.max_iteration
@@ -38,6 +37,13 @@ class VCE(nn.Module):
         self.mog.forwarding = True
         print('K components=', self.K_components, 'copula transform=', self.mog.forwarding)
         
+        
+    def forward(self, x, y):
+        self.eval()
+        with torch.no_grad(): 
+            if self.nde_type is not None:
+                v, w = self.gc.forward(x, y)
+        return v, w
 
     def MI(self, x, y, mode='mc'):
         self.eval()
@@ -84,7 +90,7 @@ class VCE(nn.Module):
             return self.gc
         print('nde type:', self.nde_type)
         if self.nde_type == 'VGC':
-            gc = VGC(n_blocks=2, n_inputs=d, n_hidden=500, n_cond_inputs=2)
+            gc = VGC(n_blocks=2, n_inputs=d, n_hidden=d*20, n_cond_inputs=2)
             gc.to(x.device)
             gc.maf1.max_iteration = 1000
             gc.maf2.max_iteration = 1000
