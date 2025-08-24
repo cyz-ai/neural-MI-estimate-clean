@@ -21,9 +21,9 @@ Implemented estimators:
 Included benchmarks:
 
 - Wrapped Gaussian
-- Mixture of Gaussians
 - Multivariate Student-t
+- Mixture of Gaussians
+- Smoothed uniform 
 - Swiss Roll 
 - Spiral transformation
 - Images with known MI
-- Resampled texts
