@@ -115,8 +115,7 @@ Key VCE parameters (attributes on the `Hyperparams` object):
 ## 📊 Benchmarks
 
 All ship with closed-form or exactly-computable ground-truth MI, adapted from [1, 2]. Each comes with a self-contained
-notebook that samples the data, runs the estimators, and reports MI against ground truth — open and
-run whichever you need.
+notebook that samples the data, runs the estimators, and reports MI against ground truth.
 
 | Benchmark | What it probes | Example |
 |---|---|---|
@@ -129,9 +128,9 @@ run whichever you need.
 | Images with known MI | high-dimensional image pairs | [`exp_image_Gaussian_medium.ipynb`](exp_image_Gaussian_medium.ipynb) |
 | Qwen IMDB embeddings | language model embeddings | Coming soon |
 
-[1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. *(synthetic benchmarks)*
+[1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. 
 
-[2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. *(image benchmark)*
+[2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. 
 
 ## 📁 Project Structure
 
