@@ -27,10 +27,9 @@
 - **Test-time search of the optimal copula** — train the copula mixture once, then select the
   dependence structure best suited to the data at test time (across different combination of copula
   components). No retraining needed.
-- **6 estimators in one interface** — VCE plus MINE, InfoNCE, MRE, MINDE, and MIENF all share
-  `learn(x, y)` / `MI(x, y)`.
-- **7 benchmarks with exact ground-truth MI** — heavy-tailed, nonlinear, manifold, and image data.
-- **Self-contained** — pure PyTorch with NumPy/SciPy; no external libraries required.
+- **6 estimators in one interface** — all share `learn(x, y)` / `MI(x, y)`.
+- **7 benchmarks with ground-truth MI** — heavy-tailed, nonlinear, manifold, and image data.
+- **Self-contained & lightweight** — pure PyTorch with NumPy/SciPy; no external libraries required.
 
 ## 🚀 Installation
 
@@ -120,14 +119,14 @@ run whichever you need.
 
 | Benchmark | What it probes | Example |
 |---|---|---|
-| Wrapped Gaussian | nonlinear per-coordinate warps | [`exp_wrapped_Gaussian.ipynb`](exp_wrapped_Gaussian.ipynb) |
+| Wrapped Gaussian | nonlinear warps | [`exp_wrapped_Gaussian.ipynb`](exp_wrapped_Gaussian.ipynb) |
 | Multivariate Student-t | heavy-tailed dependence | [`exp_synthetic_student_t.ipynb`](exp_synthetic_student_t.ipynb) |
 | Mixture of Gaussians | multimodal block dependence | [`exp_synthetic_mog.ipynb`](exp_synthetic_mog.ipynb) |
 | Smoothed uniform | bounded-support marginals | [`exp_smoothed_uniform.ipynb`](exp_smoothed_uniform.ipynb) |
-| Swiss Roll | manifold-embedded copula | — |
+| Swiss Roll | manifold structure | — |
 | Spiral | norm-dependent rotation | [`exp_spiral.ipynb`](exp_spiral.ipynb) |
 | Images with known MI | high-dimensional image pairs | [`exp_image_Gaussian_medium.ipynb`](exp_image_Gaussian_medium.ipynb) |
-| Bert/Qwen IMDB embeddings via resampling | high-dimensional LM embeddings | TO DO |
+| Qwen IMDB embeddings | language model embeddings | TO DO |
 
 [1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. *(synthetic benchmarks)*
 [2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. *(image benchmark)*
@@ -136,7 +135,7 @@ run whichever you need.
 
 ```
 estimators/     MI estimators (VCE + 5 baselines), shared learn(x,y) / MI(x,y) interface
-nde/            neural density estimators — flows (NAF, MAF, FM) and variational copulas (MoG, VGC)
+nde/            neural density estimators — flows (NAF, MAF, FM), copulas (VGC) and MoG. 
 datasets/       synthetic & image benchmarks with known ground-truth MI
 compression/    autoencoder & PCA to compress high-dim inputs (images, embeddings) before MI
 optimizer.py    shared training loop (Adam, train/val split, early stopping)
@@ -145,7 +144,7 @@ exp_*.ipynb     one self-contained experiment notebook per benchmark
 
 ## 📖 Citation
 
-If you find the code and method useful, please consider citing the following paper:
+If you find the code and method useful, please consider citing our NeurIPS paper:
 
 ```bibtex
 @article{chen2025neural,
