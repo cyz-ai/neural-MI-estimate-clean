@@ -1,7 +1,7 @@
 <h1 align="center"> Mutual Information Estimation with Vector Copulas</h1>
 
 <p align="center">
-  <b>Vector Copula Estimator (VCE) — a two-stage MI estimator disentangling marginal patterns from dependence structure</b>
+  <b>Vector Copula Estimator (VCE) — an MI estimator disentangling marginal patterns from dependence structure</b>
 </p>
 
 <p align="center">
