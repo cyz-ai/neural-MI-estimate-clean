@@ -44,8 +44,8 @@ pip install -r requirements.txt
 
 ```python
 import torch
-from datasets.Spiral import Spiral
-from estimators.VCE import VCE
+from datasets import Spiral
+from estimators import VCE
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -72,44 +72,41 @@ The same setup runs in [`exp_spiral.ipynb`](exp_spiral.ipynb).
 
 ## 🗜️ High-Dimensional Data
 
-Like any density-based estimator, VCE degrades when the per-side dimension is very large. For
+Like any generative estimator, VCE degrades when the per-side dimension is very large. For
 high-dimensional inputs such as **images** or **LLM embeddings**, we recommend compressing each side
-to a low-dimensional code first — with an **autoencoder** or **PCA** — and estimating MI on the
-codes. The `compression/` module provides both:
+to a low-dimensional latent first — with an **autoencoder** or **PCA** — and estimating MI on the latent. The
+`compression/` module provides this:
 
 ```python
-from compression.autoencoder import Autoencoder
-from compression.pca import PCA
+from compression import Autoencoder
 
 k = 32                                            # target latent size (same for both sides)
 
-# Autoencoder: train a reconstruction, then encode each side independently
+# train a reconstruction, then encode each side independently
 ae_x = Autoencoder(x_dim=X.size(1), latent_dim=k).to(device); ae_x.learn(X)
 ae_y = Autoencoder(x_dim=Y.size(1), latent_dim=k).to(device); ae_y.learn(Y)
 Zx, Zy = ae_x.encode(X), ae_y.encode(Y)           # each (n, k)
-
-# ...or PCA: a fast linear low-rank projection
-Zx, Zy = PCA(X, latent_dim=k), PCA(Y, latent_dim=k)
 
 estimator.learn(Zx, Zy)                           # then estimate MI on the compressed codes
 ```
 
 As long as the compression is near-lossless, the MI between the codes closely tracks the MI between
-the original variables.
+the original variables. You can check how lossless the code is with `ae_x.compressibility(X)`, which
+returns a reconstruction score in ~[0, 1] (higher is better; ≈1 means near-lossless).
 
 ## 🧩 Estimators
 
 Every estimator is an `nn.Module` exposing `learn(x, y)` (train) and `MI(x, y)` (read), and trains
 through the shared `optimizer.py` (Adam, 80/20 split, early stopping).
 
-| Estimator | Class | Family |
+| Estimator | Import | Family |
 |---|---|---|
-| **VCE** *(ours)* | `estimators.VCE.VCE` | vector copula (vector ranks + mixture of Gaussian copulas) |
-| MINE | `estimators.MINE.MINE` | Donsker–Varadhan lower bound |
-| InfoNCE | `estimators.InfoNCE.InfoNCE` | contrastive (CPC / NCE) bound |
-| MRE | `estimators.MRE.MRE` | MI ratio estimator |
-| MINDE | `estimators.MINDE.MINDE` | diffusion / score-based |
-| MIENF | `estimators.MIENF.MIENF` | MI via a normalizing-flow density |
+| **VCE** *(ours)* | `from estimators import VCE` | vector copula |
+| MINE | `from estimators import MINE` | Donsker–Varadhan lower bound |
+| InfoNCE | `from estimators import InfoNCE` | contrastive (CPC / NCE) bound |
+| MRE | `from estimators import MRE` | MI via (reference-based) ratio estimation |
+| MINDE | `from estimators import MINDE` | diffusion / score-based |
+| MIENF | `from estimators import MIENF` | MI via pairs of normalizing-flow transformations |
 
 Key VCE knobs (attributes on the `Hyperparams` object): `K_components` (copula mixture size,
 default 32), `n_restarts` (best-of-*N* copula fits, default 4), `marginal_flow` (`"FM"` or `"NAF"`),
@@ -117,31 +114,22 @@ default 32), `n_restarts` (best-of-*N* copula fits, default 4), `marginal_flow` 
 
 ## 📊 Benchmarks
 
-All ship with closed-form or exactly-computable ground-truth MI.
+All ship with closed-form or exactly-computable ground-truth MI, adapted from [1, 2]. Each comes with a self-contained
+notebook that samples the data, runs the estimators, and reports MI against ground truth — open and
+run whichever you need.
 
-| Benchmark | Class | What it probes |
+| Benchmark | What it probes | Example |
 |---|---|---|
-| Wrapped Gaussian | `datasets.NonlinearGaussian.NonlinearGaussian` | nonlinear per-coordinate warps |
-| Multivariate Student-t | `datasets.Student_t.MultivariateStudentT` | heavy-tailed dependence |
-| Mixture of Gaussians | `datasets.MoG.MoG` | multimodal block dependence |
-| Smoothed uniform | `datasets.Uniform.Uniform` | bounded-support marginals |
-| Swiss Roll | `datasets.SwissRoll.SwissRoll` | manifold-embedded copula |
-| Spiral | `datasets.Spiral.Spiral` | norm-dependent rotation |
-| Images with known MI | `datasets.image` | high-dimensional image pairs |
+| Wrapped Gaussian | nonlinear per-coordinate warps | [`exp_wrapped_Gaussian.ipynb`](exp_wrapped_Gaussian.ipynb) |
+| Multivariate Student-t | heavy-tailed dependence | [`exp_synthetic_student_t.ipynb`](exp_synthetic_student_t.ipynb) |
+| Mixture of Gaussians | multimodal block dependence | [`exp_synthetic_mog.ipynb`](exp_synthetic_mog.ipynb) |
+| Smoothed uniform | bounded-support marginals | [`exp_smoothed_uniform.ipynb`](exp_smoothed_uniform.ipynb) |
+| Swiss Roll | manifold-embedded copula | — |
+| Spiral | norm-dependent rotation | [`exp_spiral.ipynb`](exp_spiral.ipynb) |
+| Images with known MI | high-dimensional image pairs | [`exp_image_Gaussian_medium.ipynb`](exp_image_Gaussian_medium.ipynb) |
 
-## 🔬 Reproducing Experiments
-
-Each benchmark ships as a self-contained notebook that samples the data, runs the estimators, and
-reports MI against ground truth. Open and run whichever you need:
-
-| Notebook | Benchmark |
-|---|---|
-| `exp_synthetic_mog.ipynb` | mixture of Gaussians |
-| `exp_synthetic_student_t.ipynb` | heavy-tailed Student-t |
-| `exp_spiral.ipynb` | spiral transformation |
-| `exp_smoothed_uniform.ipynb` | smoothed uniform |
-| `exp_wrapped_Gaussian.ipynb` | wrapped Gaussian |
-| `exp_image_Gaussian_medium.ipynb` | images with known MI |
+[1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. *(synthetic benchmarks)*
+[2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. *(image benchmark)*
 
 ## 📁 Project Structure
 

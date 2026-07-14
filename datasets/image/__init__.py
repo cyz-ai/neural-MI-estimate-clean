@@ -3,7 +3,7 @@ Image-pair benchmarks with a target mutual information.
 
 ``image_dataset`` builds Gaussian-plot / rectangle image pairs whose ground-truth
 MI is fixed by construction. Ported from "Information Bottleneck Analysis of Deep
-Neural Networks via Lossy Compression" (ICLR 2023); its Mutinfo toolbox is
+Neural Networks via Lossy Compression" (ICLR 2024); its Mutinfo toolbox is
 vendored under ``utils/`` (see ``README.md``).
 
 Public helpers::

@@ -9,7 +9,7 @@ MI estimators.
 The image-generation code and the `utils/` helpers are **ported from** the paper:
 
 > **Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression**
-> ICLR 2023
+> ICLR 2024
 
 and its accompanying "Mutinfo" information-theoretic toolbox, distributed under
 the GNU General Public License v3.0. Please cite that work if you use this code.
