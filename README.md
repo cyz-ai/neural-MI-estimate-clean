@@ -1,7 +1,7 @@
-<h1 align="center">Neural Mutual Information Estimation with Vector Copulas</h1>
+<h1 align="center"> Mutual Information Estimation with Vector Copulas</h1>
 
 <p align="center">
-  <b>Vector Copula Estimator (VCE) — a two-stage MI estimator that disentangles marginal patterns from dependence structure</b>
+  <b>Vector Copula Estimator (VCE) — a two-stage MI estimator disentangling marginal patterns from dependence structure</b>
 </p>
 
 <p align="center">
@@ -14,8 +14,8 @@
 
 
 1. **Marginal distribution learning.** Mapping the $X$ and $Y$ marginals onto $\mathcal{U}[0, 1]^{d_X}$ and $\mathcal{U}[0, 1]^{d_Y}$, stripping
-   away their shape.
-2. **Vector copula (dependence) learning.** A mixture of vector Gaussian copulas is fit on $(\mathbf{u}_X, \mathbf{u}_Y)$ by maximum likelihood. MI is read off from the  copula.
+   away their original patterns and shape.
+2. **Vector copula (dependence) learning.** A mixture of vector Gaussian copulas is fit on the transformed data by maximum likelihood. MI can be directly read off from the copula.
 
 
 ---
