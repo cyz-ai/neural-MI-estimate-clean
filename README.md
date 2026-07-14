@@ -127,6 +127,7 @@ run whichever you need.
 | Swiss Roll | manifold-embedded copula | — |
 | Spiral | norm-dependent rotation | [`exp_spiral.ipynb`](exp_spiral.ipynb) |
 | Images with known MI | high-dimensional image pairs | [`exp_image_Gaussian_medium.ipynb`](exp_image_Gaussian_medium.ipynb) |
+| Bert/Qwen IMDB embeddings via resampling | high-dimensional LM embeddings | TO DO |
 
 [1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. *(synthetic benchmarks)*
 [2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. *(image benchmark)*
