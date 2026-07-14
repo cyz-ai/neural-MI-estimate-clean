@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 
 import optimizer
-from nde.FM import NFM
-from nde.NAF import NAF
-from nde.MoG import MoG
+from nde import NFM, NAF, MoG
 
 
 class VCE(nn.Module):

@@ -12,15 +12,24 @@ Each module defines one estimator as an ``nn.Module`` with a shared interface
 - ``MIENF``  : MI via a normalizing-flow density (single Gaussian-copula base).
 - ``VCE``    : two-stage Vector Copula Estimator (marginal flows + MoG copula).
 
-Import the concrete classes from their modules, e.g.::
+Each class is re-exported at the package level, so either form works::
 
-    from estimators.VCE import VCE
-    from estimators.MINE import MINE
+    from estimators import VCE          # concise
+    from estimators.VCE import VCE      # explicit module path
 
-Note: this package is intentionally a thin marker -- the class names collide
-with their module names, so the classes are not re-exported at the package level
-(doing so would shadow the submodules that call sites import directly).
+(The re-export binds the ``estimators.VCE`` attribute to the class, but the
+submodule stays importable via ``sys.modules``, so the explicit form below keeps
+working too -- both resolve to the same class.)
 """
+
+from .MINE import MINE
+from .InfoNCE import InfoNCE
+from .SMILE import SMILE
+from .MRE import MRE
+from .DoE import DoE
+from .MINDE import MINDE
+from .MIENF import MIENF
+from .VCE import VCE
 
 __all__ = [
     "MINE",

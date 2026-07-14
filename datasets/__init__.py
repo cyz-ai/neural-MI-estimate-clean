@@ -15,15 +15,24 @@ closed-form or exactly computable, for benchmarking neural MI estimators:
                           the ICLR 2023 lossy-compression IB paper (see
                           ``image/README.md``).
 
-Import the concrete classes from their modules, e.g.::
+Each concrete class is re-exported at the package level, so either form works::
 
-    from datasets.NonlinearGaussian import NonlinearGaussian
-    from datasets.Student_t import MultivariateStudentT
+    from datasets import NonlinearGaussian, MultivariateStudentT   # concise
+    from datasets.NonlinearGaussian import NonlinearGaussian       # explicit module path
 
-Note: this package is intentionally a thin marker -- the class names collide
-with their module names, so the classes are not re-exported at the package level
-(doing so would shadow the submodules that some call sites import directly).
+Both resolve to the same class; the explicit module path keeps working because the
+submodule stays importable via ``sys.modules``. ``image`` is a package of helpers
+(not a single class) and stays available as the submodule ``datasets.image``.
 """
+
+from .NonlinearGaussian import NonlinearGaussian
+from .MoG import MoG
+from .SwissRoll import SwissRoll
+from .Spiral import Spiral
+from .Uniform import Uniform
+from .Student_t import MultivariateStudentT
+from .NLP import TextDataset
+from . import image
 
 __all__ = [
     "NonlinearGaussian",
@@ -31,6 +40,7 @@ __all__ = [
     "SwissRoll",
     "Spiral",
     "Uniform",
-    "Student_t",
-    "NLP",
+    "MultivariateStudentT",
+    "TextDataset",
+    "image",
 ]
