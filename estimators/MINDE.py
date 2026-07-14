@@ -4,16 +4,17 @@ import torch.nn as nn
 
 import optimizer
 from estimators.minde.diffusion import VP_SDE
-from estimators.layers.UnetMLP import UnetMLP_simple
+from estimators.minde.UnetMLP import UnetMLP_simple
 
 from estimators.minde.diff_utils import concat_vect, deconcat, marginalize_data, cond_x_data, EMA
 from estimators.minde.info_measures import mi_cond, mi_cond_sigma, mi_joint, mi_joint_sigma
 
 class MINDE(nn.Module):
-    """ 
-        Mutual information neural estimate
+    """MINDE — Mutual Information Neural Diffusion Estimator (Franzese et al. 2024).
+
+    Estimates MI from the score functions of the joint vs. marginal diffusion processes.
     """
-    def __init__(self, architecture_encoder_x, architecture_encoder_y, architecture_critic, hyperparams, var_list=None):
+    def __init__(self, hyperparams, var_list=None):
         super().__init__()
 
         if var_list ==None:

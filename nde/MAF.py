@@ -1,12 +1,9 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
-import torch.distributions as distribution
+import torch.nn.functional as F
 import math
 import numpy as np
-import time
 import optimizer
-from copy import deepcopy
 
 
 class MAF(nn.Sequential):

@@ -1,22 +1,16 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
-import torch.autograd as autograd
-import numpy as np
-import scipy
-import math
-import time
-import optimizer
-import estimators.layers as layers
-from nde import MAF, MDN, NAF
+from nde import NAF
 
 
 
 class DoE(nn.Module):
-    """ 
-        Difference of Entropy
+    """DoE — Difference of Entropies.
+
+    Estimates MI = H(X) - H(X|Y) using two masked autoregressive flows for the marginal and
+    the conditional density.
     """
-    def __init__(self, architecture_encoder_x, architecture_encoder_y, architecture_critic, hyperparams):
+    def __init__(self, architecture_critic, hyperparams):
         super().__init__()
         
         # hyperparameters
@@ -28,9 +22,9 @@ class DoE(nn.Module):
         
         # nde
         d = architecture_critic[0]
-        n_hidden = 200
-        self.flow = MAF(n_blocks=3, n_inputs=d//2, n_hidden=n_hidden, n_cond_inputs=d//2)
-        self.flow_x = MAF(n_blocks=3, n_inputs=d//2, n_hidden=n_hidden, n_cond_inputs=2)
+        n_hidden = 400
+        self.flow = NAF(n_blocks=3, n_inputs=d//2, n_hidden=n_hidden, n_cond_inputs=d//2)
+        self.flow_x = NAF(n_blocks=3, n_inputs=d//2, n_hidden=n_hidden, n_cond_inputs=2)
             
     def MI(self, x, y):
         self.eval()

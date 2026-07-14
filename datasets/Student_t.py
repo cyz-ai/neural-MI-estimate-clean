@@ -1,7 +1,14 @@
-from typing import Optional
+"""Multivariate Student-t benchmark with an exact mutual information.
+
+The joint ``(X, Y)`` is multivariate Student-t with a block dispersion matrix
+coupling X and Y. Unlike the Gaussian benchmarks, the heavy tails add a
+dependence on top of the linear correlation, so the MI is the sum of a Gaussian
+term (from the dispersion, computed via :class:`SplitMultinormal`) and a
+tail-correction term that depends only on the dimensions and degrees of freedom
+(:meth:`MultivariateStudentT.mi_correction`).
+"""
 
 import numpy as np
-from scipy import stats
 from scipy.special import digamma, gamma
 from scipy.stats import multivariate_normal
 
@@ -224,16 +231,13 @@ class _Multinormal:
 
     def sample(self, n_samples: int) -> np.ndarray:
         """Sample from the distribution.
+
         Args:
             n_samples: number of samples to generate
-            key: JAX key for the pseudorandom number generator
+
         Returns:
             samples, shape (n_samples, dim)
         """
-        # return np.array(
-        #     random.multivariate_normal(
-        #         key=key, mean=self._mean, cov=self._covariance, shape=(n_samples,)
-        #     )
         return multivariate_normal.rvs(mean=self._mean, cov=self._covariance, size=n_samples)
 
 
@@ -307,10 +311,6 @@ class SplitMultinormal():
             raise ValueError(
                 f"Covariance matrix has shape {self._covariance.shape}, " f"expected ({n}, {n})."
             )
-
-    def sample(self, n_points: int):
-        xy = self._joint_distribution.sample(n_samples=n_points)
-        return xy[..., : self._dim_x], xy[..., self.dim_x :]  # noqa: E203
 
     def mutual_information(self) -> float:
         """Calculates the mutual information I(X; Y) using an exact formula.

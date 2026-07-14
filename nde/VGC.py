@@ -1,135 +1,111 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
-import torch.distributions as distribution
-import math
-import numpy as np
-import time
 import optimizer
-from nde import NAF, MAF, MDN
-from copy import deepcopy
+from nde import NAF, MoG
 
 
-class VGC(nn.Sequential):
-    """ 
-        Vector Gaussian copula
+class VGC(nn.Module):
+    """Vector Gaussian Copula: per-side marginal flows + one joint MoG base for MI estimation.
+
+    The marginal flows (NAF) Gaussianize each side; a single fixed-K Mixture-of-Gaussians
+    models the joint copula density in the shared latent, and MI is read off as that density's
+    log-ratio (the 'mog' read-off).
+
+    ``learning_mode`` is the single knob controlling how flows and base are fit:
+      - 'joint': flows + base trained end-to-end, maximizing the joint log-likelihood log p(x,y);
+        the base gradient backprops through the flows.
+      - 'separate': each marginal flow is pre-trained on its own, then frozen while the base fits
+        (the shared latents are detached).
+
+    Supports rectangular MI (dim_x != dim_y): the two marginal flows and the joint base are
+    sized from ``n_inputs`` (X-side) and ``n_inputs_y`` (Y-side, defaults to ``n_inputs``).
     """
-    def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs=2, K=1):
+    def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs=2, K=16,
+                 learning_mode='joint', n_inputs_y=None, lr=1e-3, bs=250, max_iteration=200):
         super().__init__()
+        assert learning_mode in ('joint', 'separate'), \
+            f"Unknown learning_mode: {learning_mode!r}. Use 'joint' or 'separate'."
+        # n_inputs is the X-side dim; n_inputs_y the Y-side dim (defaults to n_inputs for the
+        # common square case). Marginal flows and the joint base are sized accordingly.
+        n_inputs_y = n_inputs if n_inputs_y is None else n_inputs_y
+        self.dim_x, self.dim_y = n_inputs, n_inputs_y
         self.maf1 = NAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
-        self.maf2 = NAF(n_blocks, n_inputs, n_hidden, n_cond_inputs)
-        self.base = MDN(n_in=2, n_hidden=10, n_out=2*n_inputs, K=K)
-        self.max_iteration = 200
-        self.lr = 1e-3
-        self.bs = 250
-        self.normal = None
-        self.freeze_marginal = False
+        self.maf2 = NAF(n_blocks, n_inputs_y, n_hidden, n_cond_inputs)
+        # single fixed-K joint Mixture-of-Gaussians copula base over the shared latent
+        self.base = MoG(n_in=2, n_hidden=10, n_out=n_inputs + n_inputs_y, K=K)
+        self.K = K
+        self.max_iteration = max_iteration
+        self.lr = lr
+        self.bs = bs
+        self.learning_mode = learning_mode
 
     def forward(self, x, y):
+        """Transform (x, y) through the marginal flows. Returns (z_x, z_y)."""
         xx, _ = self.maf1.forward(x)
         yy, _ = self.maf2.forward(y)
         return xx, yy
-    
-    def sample(self, size):
-        with torch.no_grad():
-            z = self.normal.rsample(size)
-            n, d = z.size()
-            z_x, z_y = z[:, 0:d//2], z[:, d//2:]
-            x, _ = self.maf1.forward(inputs=z_x, mode='inverse')
-            y, _ = self.maf2.forward(inputs=z_y, mode='inverse')
-            return torch.cat([x.clone().detach(), y.clone().detach()], dim=1)
-    
-    def log_prob(self, xy):
+
+    def _forward_latents(self, xy):
+        """Push (x, y) through the marginal flows once. Returns (xxyy, log_jacob).
+
+        In 'joint' mode the latents keep their graph so the base's log-likelihood backprops into
+        the flows; in 'separate' mode they are detached (the flows are pre-trained and frozen).
+        """
         n, d = xy.size()
-        x, y = xy[:, 0:d//2], xy[:, d//2:]
+        x, y = xy[:, :self.dim_x], xy[:, self.dim_x:]
         xx, log_jacob_xx = self.maf1.forward(x)
         yy, log_jacob_yy = self.maf2.forward(y)
-        if self.freeze_marginal:
-            xx, yy = xx.clone().detach(), yy.clone().detach()
-            log_jacob_xx, log_jacob_yy = log_jacob_xx.clone().detach(), log_jacob_yy.clone().detach()
+        if self.learning_mode == 'separate':
+            xx, yy = xx.detach(), yy.detach()
+            log_jacob_xx, log_jacob_yy = log_jacob_xx.detach(), log_jacob_yy.detach()
         xxyy = torch.cat([xx, yy], dim=1)
         log_jacob = (log_jacob_xx + log_jacob_yy).view(n, -1)
-        t = torch.ones(n, 2).to(xy.device)
-        if self.normal is None:
-            log_base_prob = self.base.log_probs(inputs=xxyy, cond_inputs=t).view(n, -1)          
-        else:
-            log_base_prob = self.normal.log_prob(xxyy).view(n, -1)
+        return xxyy, log_jacob
+
+    def _base_log_prob(self, xxyy, log_jacob):
+        """Joint log p(x,y) = log p_base(z) + log|J| on the shared latents."""
+        n = xxyy.size(0)
+        t = torch.ones(n, 2, device=xxyy.device)
+        log_base_prob = self.base.log_probs(inputs=xxyy, cond_inputs=t).view(n, -1)
         return (log_base_prob + log_jacob).view(-1)
-    
-    def log_prob_marginal(self, xy):
-        n, d = xy.size()
-        x, y = xy[:, 0:d//2], xy[:, d//2:]
-        t = torch.ones(n, 2).to(xy.device)
-        xx, log_jacob_xx = self.maf1.forward(x)
-        yy, log_jacob_yy = self.maf2.forward(y)
-        log_base_prob_xx = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[i for i in range(d//2)]).view(n, -1) 
-        log_base_prob_yy = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[i+d//2 for i in range(d//2)]).view(n, -1) 
-        return log_jacob_xx + log_base_prob_xx + log_base_prob_yy + log_jacob_yy
-        
-    
+
+    def log_prob(self, xy):
+        """Joint log p(x,y) = log p_base(f(x), g(y)) + log|J_f| + log|J_g|."""
+        xxyy, log_jacob = self._forward_latents(xy)
+        return self._base_log_prob(xxyy, log_jacob)
+
     def objective_func(self, x, y):
+        """Training objective: the joint log-likelihood log p(x,y) under the base (base density +
+        flow log-Jacobians). In 'joint' mode this backprops into the flows; in 'separate' mode the
+        latents are detached in ``_forward_latents`` so only the base is fit."""
         xy = torch.cat([x, y], dim=1)
-        log_probs_joint = self.log_prob(xy).mean()
-        return log_probs_joint
-    
+        xxyy, log_jacob = self._forward_latents(xy)
+        return self._base_log_prob(xxyy, log_jacob).mean()
+
     def learn(self, x, y):
-        n, d = x.size()
-        # [A]. pre-train f, g
-        if self.maf1.max_iteration > 0:
-            self.maf1.learn(x)
-        if self.maf2.max_iteration > 0:
-            self.maf2.learn(y)
+        """Fit the VGC. In 'separate' mode each marginal flow is pre-trained first (then frozen);
+        both modes then fit the base (jointly with the flows in 'joint' mode) by maximizing the
+        joint log-likelihood."""
+        if self.learning_mode == 'separate':
+            if self.maf1.max_iteration > 0:
+                self.maf1.learn(x)
+            if self.maf2.max_iteration > 0:
+                self.maf2.learn(y)
         if self.max_iteration > 0:
             optimizer.NNOptimizer.learn(self, x=x, y=y)
-#         with torch.no_grad():
-#             xx, yy = self.forward(x, y)
-#         xy = torch.cat([xx, yy], dim=1)
-#         xy = self.copula_transformation(xy)
-#         # [B]. learn the inner Gaussian 
-#         self.mu, self.V = self.empirical_params(xy)
-#         self.mu2, self.V2 = self.mu.clone(), torch.eye(2*d).to(x.device)
-#         self.Vx, self.mx = self.V[0:d, 0:d], self.mu[0:d]
-#         self.Vy, self.my = self.V[d:, d:], self.mu[d:]
-#         self.normal = distribution.multivariate_normal.MultivariateNormal(self.mu, self.V)
-#         self.normal2 = distribution.multivariate_normal.MultivariateNormal(self.mu2, self.V2)
-#         self.normal_x = distribution.multivariate_normal.MultivariateNormal(self.mx, self.Vx)
-#         self.normal_y = distribution.multivariate_normal.MultivariateNormal(self.my, self.Vy)
-        return 
-    
-    def empirical_params(self, z):
-        n, d = z.size()
-        mu = z.mean(dim=0, keepdim=True)
-        V = (z-mu).t() @ (z-mu)/(n+1)
-        return mu.view(-1), V
-    
-    
-    # copula transformation
-    def copula_transformation(self, z):
-        data = z
-        # calculate empirical CDF
-        sorted_data, idx = torch.sort(data, dim=0)
-        _, idx2 = torch.sort(idx, dim=0)
-        u = (idx2.float()+1)/(len(data)+1)    
-        zeros, ones = torch.zeros(data.size()).to(data.device), torch.ones(data.size()).to(data.device)
-        normal = distribution.Normal(zeros, ones)
-        # calculate the latent Z
-        z = normal.icdf(u)
-        n, d = z.size()
-        return z
-    
-    # compute MI
+
     def MI(self, x, y, inner=True):
+        """MI in the latent space via the joint MoG (mog read-off):
+            MI = E[log q(z_x, z_y) - log q_x(z_x) - log q_y(z_y)]
+        where q_x, q_y are the base's analytic marginals. ``inner=False`` first pushes (x, y)
+        through the marginal flows (MI is invariant to those invertible maps)."""
         if inner is False:
             x, y = self.forward(x, y)
         xy = torch.cat([x, y], dim=1)
         n, dx = x.size()
-        t = torch.ones(n, 2).to(xy.device)
-        log_copula_density_xy = self.base.log_probs(inputs=xy, cond_inputs=t)
-        log_copula_density_x = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[i for i in range(dx)])
-        log_copula_density_y = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=[dx+i for i in range(dx)])       
-        mi = log_copula_density_xy - log_copula_density_x - log_copula_density_y
-        return mi.mean().item()
-        
-    def print(self):
-        print('mu=', self.mu)
-        print('V=',  (self.V*100).int()/100.0)
+        dy = y.size(1)
+        t = torch.ones(n, 2, device=xy.device)
+        log_joint = self.base.log_probs(inputs=xy, cond_inputs=t)
+        lx = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=list(range(dx)))
+        ly = self.base.log_probs_marginal(inputs=xy, cond_inputs=t, marginals=list(range(dx, dx + dy)))
+        return (log_joint - lx - ly).mean().item()

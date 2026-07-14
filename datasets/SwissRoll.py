@@ -1,21 +1,37 @@
+"""Swiss-roll benchmark: a Gaussian copula embedded on a rolled 2D manifold.
+
+The latent ``(X, Y)`` is a block-correlated Gaussian. Each coordinate is pushed
+through its Gaussian CDF to a uniform, and the X-uniform is embedded onto a swiss
+-roll curve in the plane while the Y-uniform is padded with independent noise
+(see :meth:`SwissRoll.transformation`). The reported ``true_mutual_info`` is the
+closed-form MI of the underlying Gaussian copula; the manifold embedding makes
+the estimation task hard without changing that reference value.
+"""
+
 import numpy as np
 import torch
 from scipy.linalg import block_diag
 from scipy.stats import multivariate_normal
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  (registers the 3d projection)
 
 import torch.distributions as distribution
 
 
 class SwissRoll(Dataset):
-    """"""
+    """Block-correlated Gaussian embedded on a swiss-roll manifold.
+
+    Args:
+        n_samples: number of latent samples drawn at construction.
+        n_dims: total dimensionality (even); X and Y each get ``n_dims // 2``.
+        rho: within-block correlation coefficient in ``(-1, 1)``.
+        mu: scalar (or broadcastable) added to the zero mean.
+    """
 
     def __init__(self, n_samples=100000, n_dims=80, rho=0.80, mu=0):
-        """ """
         self.n_dims = n_dims
-        self.mu = np.zeros(self.n_dims)+mu
+        self.mu = np.zeros(self.n_dims) + mu
         self.rho = rho
         self.rhos = np.ones(n_dims // 2) * self.rho
         self.cov_matrix = block_diag(*[[[1, self.rho], [self.rho, 1]] for _ in range(n_dims // 2)])
@@ -28,61 +44,81 @@ class SwissRoll(Dataset):
         return self.data[idx]
 
     def _sample_gaussian(self, n_samples, cov_matrix):
-        mvn = multivariate_normal(mean=np.zeros(self.n_dims)+self.mu, cov=cov_matrix)
+        """Draw ``n_samples`` rows from ``N(mu, cov_matrix)`` as a NumPy array."""
+        mvn = multivariate_normal(mean=np.zeros(self.n_dims) + self.mu, cov=cov_matrix)
         return mvn.rvs(n_samples)
 
     @staticmethod
-    def _get_rho_from_mi(mi, n_dims):   # analytically calculate correlation coefficient from MI value
+    def _get_rho_from_mi(mi, n_dims):
+        """Correlation ``rho`` that yields mutual information ``mi`` at ``n_dims``."""
         x = (4 * mi) / n_dims
-        return (1 - np.exp(-x)) ** 0.5  
-    
+        return (1 - np.exp(-x)) ** 0.5
+
     @staticmethod
-    def _get_mi_from_rho(rho, n_dims):  # analytically calculate mutual information from correlation value
+    def _get_mi_from_rho(rho, n_dims):
+        """Closed-form MI of the block-correlated Gaussian with correlation ``rho``."""
         a = np.log(1 - rho**2)
-        return -1/4.0*n_dims*a   
-    
+        return -1/4.0*n_dims*a
+
     @staticmethod
     def u2xy(u):
+        """Split an interleaved latent ``u`` into ``(X, Y)`` (even/odd columns)."""
         X, Y = u[:, ::2], u[:, 1::2]
         return X, Y
-    
+
     @staticmethod
     def xy2u(X, Y):
+        """Interleave ``(X, Y)`` back into a single latent ``u``."""
         n, d = X.shape
         samples = np.zeros((len(X), d*2))
         samples[:, ::2], samples[:, 1::2] = X, Y
-        return samples      
-    
+        return samples
+
     def _numerator_log_prob(self, u):
-        mvn = multivariate_normal(mean=np.zeros(self.n_dims)+self.mu, cov=self.cov_matrix)
+        """Log density of the joint ``p(x, y)`` at interleaved points ``u``."""
+        mvn = multivariate_normal(mean=np.zeros(self.n_dims) + self.mu, cov=self.cov_matrix)
         return mvn.logpdf(u)
-    
+
     def _denominator_log_prob(self, u):
-        mvn = multivariate_normal(mean=np.zeros(self.n_dims)+self.mu, cov=np.diag(np.ones(self.n_dims)))
+        """Log density of the product of marginals ``p(x) p(y)`` at ``u``."""
+        mvn = multivariate_normal(mean=np.zeros(self.n_dims) + self.mu, cov=np.diag(np.ones(self.n_dims)))
         return mvn.logpdf(u)
 
     def sample_data(self, n_samples, mode='joint'):
-        cov = self.cov_matrix if mode=='joint' else np.diag(np.ones(self.n_dims))
+        """Sample the latent and return its swiss-roll embedding ``(X, Y)``.
+
+        Args:
+            n_samples: number of rows to draw.
+            mode: ``'joint'`` uses the correlated covariance; anything else
+                samples X and Y independently (identity covariance).
+        """
+        cov = self.cov_matrix if mode == 'joint' else np.diag(np.ones(self.n_dims))
         data = self._sample_gaussian(n_samples, cov)
         X, Y = torch.Tensor(data[:, ::2]).clone(), torch.Tensor(data[:, 1::2]).clone()
         return self.transformation(X, Y)
-        
-    def log_ratio(self, X, Y):                    # this return log p(x, y)/p(x)p(y)  
+
+    def log_ratio(self, X, Y):
+        """Pointwise ``log p(x, y) / (p(x) p(y))`` for the latent Gaussian."""
         samples = np.zeros((len(X), self.n_dims))
         samples[:, ::2], samples[:, 1::2] = X, Y
         return self._numerator_log_prob(samples) - self._denominator_log_prob(samples)
-    
+
     def true_mutual_info(self):
+        """Exact MI in nats of the latent copula (the embedding preserves it)."""
         return self._get_mi_from_rho(self.rho, self.n_dims)
 
     def empirical_mutual_info(self):
+        """Monte-Carlo MI estimate on the latent (mean log-ratio over 100k samples)."""
         samples = self._sample_gaussian(100000, self.cov_matrix)
         return np.mean(self._numerator_log_prob(samples) - self._denominator_log_prob(samples))
 
-    def transformation(self, x, y):       
-        '''
-            transform the data to make data a swise roll
-        '''
+    def transformation(self, x, y):
+        """Embed latent ``(x, y)`` onto the swiss-roll manifold.
+
+        X is mapped through its Gaussian CDF to a uniform and placed on the
+        swiss-roll curve ``(t cos t, t sin t)``; Y keeps its CDF value alongside
+        an independent Gaussian noise dimension. Small jitter is added to both.
+        """
         # x, y -> F(x), F(y)
         mu, sigma = x*0, x*0 + 1
         normal = distribution.normal.Normal(mu, sigma)
@@ -95,20 +131,17 @@ class SwissRoll(Dataset):
         # new x, new y
         X = torch.cat([data[0], data[1]], dim=1)
         Y = torch.cat([data[2], data[3]], dim=1)
-        return X + 0.05*torch.randn_like(X), Y + 0.05*torch.rand_like(Y)   
-
+        return X + 0.05*torch.randn_like(X), Y + 0.05*torch.rand_like(Y)
 
     def plot(self, X, Y):
+        """3D scatter of the swiss-roll embedding for the first 1000 samples."""
         # Split the data into three arrays for plotting
         x = X[0:1000, 0].cpu().numpy()
         z = X[0:1000, 1].cpu().numpy()
         y = Y[0:1000, 0].cpu().numpy()
 
-        # Create a new figure for plotting
+        # Create a new figure and a 3D subplot
         fig = plt.figure()
-
-        # Add a 3D subplot
-        # The '111' means "1x1 grid, first subplot" and 'projection="3d"' makes it 3D
         ax = fig.add_subplot(111, projection='3d')
 
         # Plot the data
@@ -123,11 +156,4 @@ class SwissRoll(Dataset):
         ax.set_ylabel('Y Label')
         ax.set_zlabel('Z Label')
 
-        # Display the plot
         plt.show()
-
-
-
-
-
-

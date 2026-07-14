@@ -1,8 +1,7 @@
 
 from functools import partial
 import torch
-import torch.nn.functional as F 
-from torch import Tensor   
+from torch import Tensor
 from torch import nn
 
 
