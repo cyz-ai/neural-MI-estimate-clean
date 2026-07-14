@@ -1,7 +1,7 @@
-<h1 align="center">Vector Copula Estimator (VCE)</h1>
+<h1 align="center">Neural Mutual Information Estimation with Vector Copulas, NeurIPS 2025</h1>
 
 <p align="center">
-  <b>Neural Mutual Information Estimation with Vector Copulas</b>
+  <b>Two-stage mutual information estimator that disentangles marginal patterns and dependence structure</b>
 </p>
 
 <p align="center">
@@ -12,14 +12,12 @@
 
 
 
-Two-stage mutual information estimator that disentangles marginal patterns and dependence structure (the vector copula).
-
-1. **Vector ranks (marginal learning).** Each side's multivariate marginal $p(\mathbf{x})$,
+1. **Marginal distribution learning.** Each side's multivariate marginal $p(\mathbf{x})$,
    $p(\mathbf{y})$ is learned with a flexible normalizing flow and used to compute its *vector rank*
    $\mathbf{u}_X, \mathbf{u}_Y$ — the multivariate generalization of the rank transform, which maps
    the $X$ and $Y$ marginals onto $\mathcal{U}[0, 1]^{d_X}$ and $\mathcal{U}[0, 1]^{d_Y}$, stripping
    away their shape.
-2. **Vector copula (dependence).** A mixture of vector Gaussian copulas is fit on
+2. **Vector copula (dependence) learning.** A mixture of vector Gaussian copulas is fit on
    $(\mathbf{u}_X, \mathbf{u}_Y)$ by maximum likelihood, and its dependence structure is selected for
    the data at hand by best-of-N model selection; MI is read off from the selected copula.
 
