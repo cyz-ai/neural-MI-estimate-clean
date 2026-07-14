@@ -85,13 +85,13 @@ k = 32                                            # target latent size (same for
 ae_x = Autoencoder(x_dim=X.size(1), latent_dim=k).to(device); ae_x.learn(X)
 ae_y = Autoencoder(x_dim=Y.size(1), latent_dim=k).to(device); ae_y.learn(Y)
 Zx, Zy = ae_x.encode(X), ae_y.encode(Y)           # each (n, k)
+print(ae_x.compressibility(X))                    # recon score in ~[0, 1]; ≈1 = near-lossless
+print(ae_y.compressibility(Y))                    # recon score in ~[0, 1]; ≈1 = near-lossless
 
 estimator.learn(Zx, Zy)                           # then estimate MI on the compressed codes
 ```
 
-As long as the compression is near-lossless, the MI between the codes closely tracks the MI between
-the original variables. You can check how lossless the code is with `ae_x.compressibility(X)`, which
-returns a reconstruction score in ~[0, 1] (higher is better; ≈1 means near-lossless).
+As long as the compression is near-lossless (compressibility ≈ 1), MI between the latent tracks the original MI.
 
 ## 🧩 Estimators
 
@@ -123,10 +123,10 @@ run whichever you need.
 | Multivariate Student-t | heavy-tailed dependence | [`exp_synthetic_student_t.ipynb`](exp_synthetic_student_t.ipynb) |
 | Mixture of Gaussians | multimodal block dependence | [`exp_synthetic_mog.ipynb`](exp_synthetic_mog.ipynb) |
 | Smoothed uniform | bounded-support marginals | [`exp_smoothed_uniform.ipynb`](exp_smoothed_uniform.ipynb) |
-| Swiss Roll | manifold structure | — |
+| Swiss Roll | manifold structure | Coming soon |
 | Spiral | norm-dependent rotation | [`exp_spiral.ipynb`](exp_spiral.ipynb) |
 | Images with known MI | high-dimensional image pairs | [`exp_image_Gaussian_medium.ipynb`](exp_image_Gaussian_medium.ipynb) |
-| Qwen IMDB embeddings | language model embeddings | TO DO |
+| Qwen IMDB embeddings | language model embeddings | Coming soon |
 
 [1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. *(synthetic benchmarks)*
 [2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. *(image benchmark)*
