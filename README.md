@@ -13,8 +13,7 @@
 
 
 
-1. **Marginal distribution learning.** Mapping the $X$ and $Y$ marginals onto $\mathcal{U}[0, 1]^{d_X}$ and $\mathcal{U}[0, 1]^{d_Y}$, stripping
-   away their original patterns and shape.
+1. **Marginal distribution learning.** Mapping the $X$ and $Y$ marginals onto $\mathcal{U}[0, 1]^{d_X}$ and $\mathcal{U}[0, 1]^{d_Y}$, stripping away their original patterns and shape.
 2. **Vector copula (dependence) learning.** A mixture of vector Gaussian copulas is fit on the transformed data by maximum likelihood. MI can be directly read off from the copula.
 
 
@@ -24,9 +23,9 @@
 
 - **Disentangles marginals and dependence** — isolating marginal effects from the
   dependence structure lets VCE model and learn the two parts separately and more flexibly.
-- **Test-time search of the optimal copula** — train the copula mixture once, then select the
+- **Test-time search of the optimal copula** — train the mixture once, then select the
   dependence structure best suited to the data at test time (across different combination of copula
-  components). No retraining needed.
+  components). No retraining.
 - **6 estimators in one interface** — all share `learn(x, y)` / `MI(x, y)`.
 - **7 benchmarks with ground-truth MI** — heavy-tailed, nonlinear, manifold, and image data.
 - **Self-contained & lightweight** — pure PyTorch with NumPy/SciPy; no external libraries required.
@@ -107,9 +106,11 @@ through the shared `optimizer.py` (Adam, 80/20 split, early stopping).
 | MINDE | `from estimators import MINDE` | diffusion / score-based |
 | MIENF | `from estimators import MIENF` | MI via pairs of normalizing-flow transformations |
 
-Key VCE knobs (attributes on the `Hyperparams` object): `K_components` (copula mixture size,
-default 32), `n_restarts` (best-of-*N* copula fits, default 4), `marginal_flow` (`"FM"` or `"NAF"`),
-`bon_selection` (held-out component pruning, default `True`).
+Key VCE parameters (attributes on the `Hyperparams` object): 
+
+- `K_components` (copula mixture component number, default 32)
+- `n_restarts` (best-of-*N* copula fits, default 4 - all fits in parallel)
+- `bon_selection` (whether to perform test-time search of copula, default `True`).
 
 ## 📊 Benchmarks
 
@@ -129,6 +130,7 @@ run whichever you need.
 | Qwen IMDB embeddings | language model embeddings | Coming soon |
 
 [1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. *(synthetic benchmarks)*
+
 [2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. *(image benchmark)*
 
 ## 📁 Project Structure
@@ -138,7 +140,7 @@ estimators/     MI estimators (VCE + 5 baselines), shared learn(x,y) / MI(x,y) i
 nde/            neural density estimators — flows (NAF, MAF, FM), copulas (VGC) and MoG. 
 datasets/       synthetic & image benchmarks with known ground-truth MI
 compression/    autoencoder & PCA to compress high-dim inputs (images, embeddings) before MI
-optimizer.py    shared training loop (Adam, train/val split, early stopping)
+optimizer.py    shared training loop (Adam, train/val split, early stopping control)
 exp_*.ipynb     one self-contained experiment notebook per benchmark
 ```
 
