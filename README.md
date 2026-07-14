@@ -1,10 +1,11 @@
-<h1 align="center">Neural Mutual Information Estimation with Vector Copulas, NeurIPS 2025</h1>
+<h1 align="center">Neural Mutual Information Estimation with Vector Copulas</h1>
 
 <p align="center">
-  <b>Two-stage mutual information estimator that disentangles marginal patterns and dependence structure</b>
+  <b>Vector Copula Estimator (VCE) — a two-stage MI estimator that disentangles marginal patterns from dependence structure</b>
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/NeurIPS-2025-8b5cf6.svg" alt="NeurIPS 2025">
   <img src="https://img.shields.io/badge/python-%E2%89%A53.9-blue.svg" alt="python">
   <img src="https://img.shields.io/badge/PyTorch-%E2%89%A52.0-ee4c2c.svg" alt="pytorch">
   <img src="https://img.shields.io/badge/CUDA-recommended-76b900.svg" alt="cuda">
@@ -12,21 +13,16 @@
 
 
 
-1. **Marginal distribution learning.** Each side's multivariate marginal $p(\mathbf{x})$,
-   $p(\mathbf{y})$ is learned with a flexible normalizing flow and used to compute its *vector rank*
-   $\mathbf{u}_X, \mathbf{u}_Y$ — the multivariate generalization of the rank transform, which maps
-   the $X$ and $Y$ marginals onto $\mathcal{U}[0, 1]^{d_X}$ and $\mathcal{U}[0, 1]^{d_Y}$, stripping
+1. **Marginal distribution learning.** Mapping the $X$ and $Y$ marginals onto $\mathcal{U}[0, 1]^{d_X}$ and $\mathcal{U}[0, 1]^{d_Y}$, stripping
    away their shape.
-2. **Vector copula (dependence) learning.** A mixture of vector Gaussian copulas is fit on
-   $(\mathbf{u}_X, \mathbf{u}_Y)$ by maximum likelihood, and its dependence structure is selected for
-   the data at hand by best-of-N model selection; MI is read off from the selected copula.
+2. **Vector copula (dependence) learning.** A mixture of vector Gaussian copulas is fit on $(\mathbf{u}_X, \mathbf{u}_Y)$ by maximum likelihood. MI is read off from the  copula.
 
 
 ---
 
 ## ✨ Highlights
 
-- **Disentangles marginals and dependence** — isolating each side's marginal effects from the
+- **Disentangles marginals and dependence** — isolating marginal effects from the
   dependence structure lets VCE model and learn the two parts separately and more flexibly.
 - **Test-time search of the optimal copula** — train the copula mixture once, then select the
   dependence structure best suited to the data at test time (across different combination of copula
