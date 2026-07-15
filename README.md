@@ -13,23 +13,6 @@
 
 ---
 
-## 📈 Performance Overview
-
-Estimation accuracy across four benchmarks. VCE is robust across every regime considered, consistently ranking in the top 2.
-
-
-![Accuracy vs. dimensionality](results/benchmark_scan_all_dim.png)
-
-**Mean training time per estimator (seconds)**
-
-| | MINE | InfoNCE | MINDE | MIENF | **VCE (ours)** |
-| --- | --- | --- | --- | --- | --- |
-| Exec time | 184s | 751s | 162s | 567s | 291s |
-
-You can reproduce using `python run_bench.py`.
-
----
-
 ## ✨ Highlights
 
 - **Disentangles marginals and dependence** — isolates marginal effects from the
@@ -129,18 +112,47 @@ notebook that samples the data, runs the estimators, and reports MI against grou
 
 | Benchmark | What it probes | Example |
 |---|---|---|
-| Wrapped Gaussian | nonlinear warps | [`exp_wrapped_gaussian.ipynb`](exp_wrapped_gaussian.ipynb) |
+| Wrapped Gaussian | non-Gaussianity | [`exp_wrapped_gaussian.ipynb`](exp_wrapped_gaussian.ipynb) |
 | Multivariate Student-t | heavy-tailed dependence | [`exp_student_t.ipynb`](exp_student_t.ipynb) |
-| Mixture of Gaussians | multimodal block dependence | [`exp_mog.ipynb`](exp_mog.ipynb) |
-| Smoothed uniform | bounded-support marginals | [`exp_smoothed_uniform.ipynb`](exp_smoothed_uniform.ipynb) |
+| Mixture of Gaussians | multimodal dependence | [`exp_mog.ipynb`](exp_mog.ipynb) |
+| Smoothed uniform | non-Gaussian dependence | [`exp_smoothed_uniform.ipynb`](exp_smoothed_uniform.ipynb) |
 | Swiss Roll | manifold structure | Coming soon |
-| Spiral | norm-dependent rotation | [`exp_spiral.ipynb`](exp_spiral.ipynb) |
-| Images with known MI | high-dimensional image pairs | [`exp_image_gaussian_plot.ipynb`](exp_image_gaussian_plot.ipynb) |
+| Spiral | highly transformed data | [`exp_spiral.ipynb`](exp_spiral.ipynb) |
+| Images with known MI | high-dimensional image | [`exp_image_gaussian_plot.ipynb`](exp_image_gaussian_plot.ipynb) |
 | Qwen IMDB embeddings | language model embeddings | Coming soon |
 
 [1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. 
 
 [2] Butakov et al. [Information Bottleneck Analysis of Deep Neural Networks via Lossy Compression](https://arxiv.org/abs/2305.08013). ICLR 2024. 
+
+## 📈 Performance Overview
+
+Estimation accuracy across four benchmarks. VCE is robust across every regime considered, consistently ranking in the top 2.
+
+![Accuracy vs. dimensionality](results/benchmark_scan_all_dim.png)
+
+**Mean training time per estimator (seconds)**
+
+<table width="100%">
+  <tr>
+    <th width="16%" align="center">&nbsp;</th>
+    <th width="16%" align="center">MINE</th>
+    <th width="17%" align="center">InfoNCE</th>
+    <th width="17%" align="center">MINDE</th>
+    <th width="17%" align="center">MIENF</th>
+    <th width="17%" align="center">VCE (ours)</th>
+  </tr>
+  <tr>
+    <td align="center"><b>Exec time</b></td>
+    <td align="center">184s</td>
+    <td align="center">751s</td>
+    <td align="center">162s</td>
+    <td align="center">567s</td>
+    <td align="center">291s</td>
+  </tr>
+</table>
+
+You can reproduce using `python run_bench.py`.
 
 ## 📁 Project Structure
 
