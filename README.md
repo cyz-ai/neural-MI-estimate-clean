@@ -22,15 +22,15 @@
 
 ---
 
-**VCE estimates mutual information by separating _what_ each variable looks like from _how_ the two depend on each other.** Classic neural estimators entangle marginal shape with dependence — so heavy tails or unusual marginals can derail the dependence fit, and a single model forced to parameterize both parts strikes a poor trade-off. VCE decouples the modeling and learning of the two, enabling flexible modeling choices, isolating irrelevant marginal effects from dependence, and reducing overall learning difficulty.
+**VCE estimates mutual information by separating _what_ each variable looks like from _how_ the two depend on each other.** Classic neural estimators entangle marginal shape with dependence structure (the vector copula) — so heavy tails or unusual marginals can derail the dependence fit, and a single model forced to parameterize both parts strikes a poor trade-off. VCE decouples the modeling and learning of the two, enabling flexible modeling choices, isolating irrelevant marginal effects from dependence, and reducing overall learning difficulty.
 
 
 ## ✨ Highlights
 
 - **Disentangles marginals and dependence** — isolates marginal effects from the
-  dependence structure (i.e., the vector copula)
+  dependence structure.
 - **Test-time search of the optimal copula** — train *N* candidate copulas jointly, then choose 
-  the optimal combination without retraining.
+  the optimal combination.
 - **6 estimators in one interface** — all share `learn(x, y)` / `MI(x, y)`.
 - **7 benchmarks with ground-truth MI** — heavy-tailed, nonlinear, manifold, and image data.
 - **Self-contained & lightweight** — pure PyTorch with NumPy/SciPy; no external libraries required.
