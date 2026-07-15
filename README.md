@@ -1,24 +1,36 @@
-<h1 align="center"> Mutual Information Estimation with Vector Copulas</h1>
+<h1 align="center"> Vector Copula Estimator (VCE) </h1>
 
 <p align="center">
-  <b>Vector Copula Estimator (VCE) — an MI estimator disentangling marginal patterns from dependence structure</b>
+  <b>Neural Mutual Information Estimation with Vector Copulas </b>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/NeurIPS-2025-8b5cf6.svg" alt="NeurIPS 2025">
   <img src="https://img.shields.io/badge/python-%E2%89%A53.9-blue.svg" alt="python">
   <img src="https://img.shields.io/badge/PyTorch-%E2%89%A52.0-ee4c2c.svg" alt="pytorch">
-  <img src="https://img.shields.io/badge/CUDA-recommended-76b900.svg" alt="cuda">
+</p>
+
+<p align="center">
+  <a href="#-highlights">Highlights</a> &nbsp;•&nbsp;
+  <a href="#-installation">Installation</a> &nbsp;•&nbsp;
+  <a href="#-quick-start">Quick Start</a> &nbsp;•&nbsp;
+  <a href="#-estimators">Estimators</a> &nbsp;•&nbsp;
+  <a href="#-benchmarks">Benchmarks</a> &nbsp;•&nbsp;
+  <a href="#-performance-overview">Performance</a> &nbsp;•&nbsp;
+  <a href="#-citation">Citation</a>
 </p>
 
 ---
 
+**VCE estimates mutual information by separating _what_ each variable looks like from _how_ the two depend on each other.** Classic neural estimators entangle marginal shape with dependence — so heavy tails or unusual marginals can derail the dependence fit, and a single model forced to parameterize both parts strikes a poor trade-off. VCE decouples the modeling and learning of the two, enabling flexible modeling choices, isolating irrelevant marginal effects from dependence, and reducing overall learning difficulty.
+
+
 ## ✨ Highlights
 
 - **Disentangles marginals and dependence** — isolates marginal effects from the
-  dependence structure (i.e., the vector copula), then learns and models the two separately.
-- **Test-time search of the optimal copula** — train *N* candidate copulas jointly, then search for
-  their best combination at test time, with no retraining. Fast, accurate dependence characterization.
+  dependence structure (i.e., the vector copula)
+- **Test-time search of the optimal copula** — train *N* candidate copulas jointly, then choose 
+  the optimal combination without retraining.
 - **6 estimators in one interface** — all share `learn(x, y)` / `MI(x, y)`.
 - **7 benchmarks with ground-truth MI** — heavy-tailed, nonlinear, manifold, and image data.
 - **Self-contained & lightweight** — pure PyTorch with NumPy/SciPy; no external libraries required.
@@ -131,7 +143,7 @@ notebook that samples the data, runs the estimators, and reports MI against grou
 
 ![Accuracy vs. dimensionality](results/benchmark_scan_all_dim.png)
 
-**Mean training time per estimator (seconds)**
+**Mean training time per estimator**
 
 <table width="100%" style="width:100%; table-layout:fixed;">
   <tr>
@@ -150,7 +162,7 @@ notebook that samples the data, runs the estimators, and reports MI against grou
   </tr>
 </table>
 
-You can reproduce using `python run_bench.py`. VCE is not always the best, but is accurate (average #1) and efficient (average #3).
+You can reproduce using `python run_bench.py`. 
 
 ## 📁 Project Structure
 
