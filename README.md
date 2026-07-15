@@ -11,21 +11,31 @@
   <img src="https://img.shields.io/badge/CUDA-recommended-76b900.svg" alt="cuda">
 </p>
 
+---
+
+## 📈 Performance Overview
+
+Estimation accuracy across four benchmarks. VCE is robust across every regime considered, consistently ranking in the top 2.
 
 
-1. **Marginal distribution learning.** Mapping the $X$ and $Y$ marginals onto $\mathcal{U}[0, 1]^{d_X}$ and $\mathcal{U}[0, 1]^{d_Y}$, stripping away their original patterns and shape.
-2. **Vector copula (dependence) learning.** A mixture of vector Gaussian copulas is fit on the transformed data by maximum likelihood. MI can be directly read off from the copula.
+![Accuracy vs. dimensionality](results/benchmark_scan_all_dim.png)
 
+**Mean training time per estimator (seconds)**
+
+| | MINE | InfoNCE | MINDE | MIENF | **VCE (ours)** |
+| --- | --- | --- | --- | --- | --- |
+| Exec time | 184s | 751s | 162s | 567s | 291s |
+
+You can reproduce using `python run_bench.py`.
 
 ---
 
 ## ✨ Highlights
 
-- **Disentangles marginals and dependence** — isolating marginal effects from the
-  dependence structure lets VCE model and learn the two parts separately and more flexibly.
-- **Test-time search of the optimal copula** — train the mixture once, then select the
-  dependence structure best suited to the data at test time (across different combination of copula
-  components). No retraining.
+- **Disentangles marginals and dependence** — isolates marginal effects from the
+  dependence structure (i.e., the vector copula), then learns and models the two separately.
+- **Test-time search of the optimal copula** — train *N* candidate copulas jointly, then search for
+  their best combination at test time, with no retraining. Fast, accurate dependence characterization.
 - **6 estimators in one interface** — all share `learn(x, y)` / `MI(x, y)`.
 - **7 benchmarks with ground-truth MI** — heavy-tailed, nonlinear, manifold, and image data.
 - **Self-contained & lightweight** — pure PyTorch with NumPy/SciPy; no external libraries required.
@@ -106,11 +116,11 @@ through the shared `optimizer.py` (Adam, 80/20 split, early stopping).
 | MINDE | `from estimators import MINDE` | diffusion / score-based |
 | MIENF | `from estimators import MIENF` | MI via pairs of normalizing-flow transformations |
 
-Key VCE parameters (attributes on the `Hyperparams` object): 
+Key VCE parameters (attributes on the `Hyperparams` object):
 
-- `K_components` (copula mixture component number, default 32)
-- `n_restarts` (best-of-*N* copula fits, default 4 - all fits in parallel)
-- `bon_selection` (whether to perform test-time search of copula, default `True`).
+- `K_components` — copula mixture component count (default 32)
+- `n_restarts` — best-of-*N* copula fits, run in parallel (default 4)
+- `bon_selection` — whether to run the test-time copula search (default `True`)
 
 ## 📊 Benchmarks
 
@@ -119,13 +129,13 @@ notebook that samples the data, runs the estimators, and reports MI against grou
 
 | Benchmark | What it probes | Example |
 |---|---|---|
-| Wrapped Gaussian | nonlinear warps | [`exp_wrapped_Gaussian.ipynb`](exp_wrapped_Gaussian.ipynb) |
-| Multivariate Student-t | heavy-tailed dependence | [`exp_synthetic_student_t.ipynb`](exp_synthetic_student_t.ipynb) |
-| Mixture of Gaussians | multimodal block dependence | [`exp_synthetic_mog.ipynb`](exp_synthetic_mog.ipynb) |
+| Wrapped Gaussian | nonlinear warps | [`exp_wrapped_gaussian.ipynb`](exp_wrapped_gaussian.ipynb) |
+| Multivariate Student-t | heavy-tailed dependence | [`exp_student_t.ipynb`](exp_student_t.ipynb) |
+| Mixture of Gaussians | multimodal block dependence | [`exp_mog.ipynb`](exp_mog.ipynb) |
 | Smoothed uniform | bounded-support marginals | [`exp_smoothed_uniform.ipynb`](exp_smoothed_uniform.ipynb) |
 | Swiss Roll | manifold structure | Coming soon |
 | Spiral | norm-dependent rotation | [`exp_spiral.ipynb`](exp_spiral.ipynb) |
-| Images with known MI | high-dimensional image pairs | [`exp_image_Gaussian_medium.ipynb`](exp_image_Gaussian_medium.ipynb) |
+| Images with known MI | high-dimensional image pairs | [`exp_image_gaussian_plot.ipynb`](exp_image_gaussian_plot.ipynb) |
 | Qwen IMDB embeddings | language model embeddings | Coming soon |
 
 [1] Czyż et al. [Beyond Normal: On the Evaluation of Mutual Information Estimators](https://arxiv.org/abs/2306.11078). NeurIPS 2023. 

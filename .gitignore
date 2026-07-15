@@ -5,3 +5,9 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Benchmark scan outputs (large per-cell JSON/latents/logs; regenerate via run_bench.py)
+results/benchmark_scan/
+
+# Parked swiss-roll experiments (to revisit later; scripts + logs)
+parked_swiss_roll/
