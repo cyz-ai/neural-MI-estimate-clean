@@ -1,3 +1,10 @@
+"""EXPERIMENTAL sandbox module -- NOT used in production.
+
+`MoG2` is a scratch copy of the production `nde.MoG.MoG` for trying out risky copula/density ideas
+without touching the estimator pipeline. Nothing in the shipped code path imports this module; VCE
+uses `nde.MoG.MoG`. Treat everything here as unstable and expect it to change or be deleted.
+See the `MoG2` class docstring for what to put here.
+"""
 import math
 import torch
 import torch.nn as nn

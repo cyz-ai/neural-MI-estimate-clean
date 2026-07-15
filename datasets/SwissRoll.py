@@ -29,10 +29,11 @@ class SwissRoll(Dataset):
         mu: scalar (or broadcastable) added to the zero mean.
     """
 
-    def __init__(self, n_samples=100000, n_dims=80, rho=0.80, mu=0):
+    def __init__(self, n_samples=100000, n_dims=80, rho=0.80, mu=0, jitter=0.05):
         self.n_dims = n_dims
         self.mu = np.zeros(self.n_dims) + mu
         self.rho = rho
+        self.jitter = jitter                 # off/along-manifold noise added to the embedding
         self.rhos = np.ones(n_dims // 2) * self.rho
         self.cov_matrix = block_diag(*[[[1, self.rho], [self.rho, 1]] for _ in range(n_dims // 2)])
         self.data = self._sample_gaussian(n_samples, self.cov_matrix).astype(dtype=np.float32)
@@ -112,26 +113,30 @@ class SwissRoll(Dataset):
         samples = self._sample_gaussian(100000, self.cov_matrix)
         return np.mean(self._numerator_log_prob(samples) - self._denominator_log_prob(samples))
 
+    @staticmethod
+    def _roll(u):
+        """Place a uniform ``u`` in ``[0, 1]`` on the swiss-roll curve ``(t cos t, t sin t)/21``."""
+        t = 3*np.pi/2*(1 + 2*u)
+        return t*torch.cos(t)/21, t*torch.sin(t)/21
+
     def transformation(self, x, y):
         """Embed latent ``(x, y)`` onto the swiss-roll manifold.
 
-        X is mapped through its Gaussian CDF to a uniform and placed on the
-        swiss-roll curve ``(t cos t, t sin t)``; Y keeps its CDF value alongside
-        an independent Gaussian noise dimension. Small jitter is added to both.
+        Both sides are pushed through their Gaussian CDF to uniforms and placed on
+        the swiss-roll curve ``(t cos t, t sin t)``: X carries ``ux``, Y carries
+        ``uy``. Both embeddings are bijective, so MI is preserved; the symmetric
+        rolling makes the task strictly harder. Small jitter is added to both.
         """
         # x, y -> F(x), F(y)
         mu, sigma = x*0, x*0 + 1
         normal = distribution.normal.Normal(mu, sigma)
         ux, uy = normal.cdf(x), normal.cdf(y)
-        # u -> (a, b, c), 3d coordinate
-        t = 3*np.pi/2*(1+2*ux)
-        e1, e2 = t*torch.cos(t)/21, t*torch.sin(t)/21
-        eps = torch.randn_like(uy)
-        data = [e1, e2, uy, eps]
-        # new x, new y
-        X = torch.cat([data[0], data[1]], dim=1)
-        Y = torch.cat([data[2], data[3]], dim=1)
-        return X + 0.05*torch.randn_like(X), Y + 0.05*torch.rand_like(Y)
+        # both sides: swiss-roll embedding of their uniform
+        e1, e2 = self._roll(ux)
+        f1, f2 = self._roll(uy)
+        X = torch.cat([e1, e2], dim=1)
+        Y = torch.cat([f1, f2], dim=1)
+        return X + self.jitter*torch.randn_like(X), Y + self.jitter*torch.rand_like(Y)
 
     def plot(self, X, Y):
         """3D scatter of the swiss-roll embedding for the first 1000 samples."""
