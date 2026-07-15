@@ -1,5 +1,6 @@
 import torch
 import math
+import time
 from copy import deepcopy
 
 
@@ -15,9 +16,11 @@ class NNOptimizer:
         return  x_train, y_train, x_val, y_val
 
     @staticmethod
-    def learn(net, x, y, shuffle=False, early_stop=True):
+    def learn(net, x, y, shuffle=False, early_stop=True, timeout=750):
         # Train `net` by maximizing net.objective_func with Adam, using a val split for
         # early stopping. Returns the best (lowest) validation loss reached.
+        # `timeout` (seconds, None to disable) is a wall-clock cap: once exceeded, training
+        # stops and the best-so-far weights are kept — bounds cost on slow high-dim cells.
 
         # optional one-off shuffle before the fixed train/val split (kept off so the split is deterministic)
         if shuffle:
@@ -41,6 +44,7 @@ class NNOptimizer:
         n_batch, n_val_batch = (int(len(x_train)/bs) if len(x_train) > bs else 1), int(len(x_val)/1000) if len(x_val) > 1000 else 1
         # best-so-far tracking for early stopping / best-val restore
         best_val_loss, best_model_state_dict, best_t, no_improvement = math.inf, None, 0, 0
+        t_start = time.time()
 
         for t in range(T):
             # re-shuffle each epoch, then slice into mini-batches
@@ -75,6 +79,10 @@ class NNOptimizer:
                 no_improvement += 1
             # stop once val loss has stalled for `T_NO_IMPROVE_THRESHOLD` epochs
             if early_stop and no_improvement >= T_NO_IMPROVE_THRESHOLD: break
+            # wall-clock timeout: stop early but keep the best-so-far snapshot (restored below)
+            if timeout is not None and (time.time() - t_start) > timeout:
+                if PRINTING: print(f'timeout {timeout}s hit at t={t} (best_t={best_t}); stopping')
+                break
             # periodic progress print (~20 lines over the whole run)
             if PRINTING and t%(T//20+1) == 0:
                print('finished: t=', t, 'loss=', loss.item(), 'loss val=', loss_val.item(), 'best val loss=', best_val_loss, 'best t=', best_t)
