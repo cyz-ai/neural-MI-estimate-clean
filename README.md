@@ -127,23 +127,21 @@ notebook that samples the data, runs the estimators, and reports MI against grou
 
 ## 📈 Performance Overview
 
-Estimation accuracy across four benchmarks. VCE is robust across every regime considered, consistently ranking in the top 2.
+**Estimation accuracy across four benchmarks**. VCE consistently ranks in the top 2 (most robust).
 
 ![Accuracy vs. dimensionality](results/benchmark_scan_all_dim.png)
 
 **Mean training time per estimator (seconds)**
 
-<table width="100%">
+<table width="100%" style="width:100%; table-layout:fixed;">
   <tr>
-    <th width="16%" align="center">&nbsp;</th>
-    <th width="16%" align="center">MINE</th>
-    <th width="17%" align="center">InfoNCE</th>
-    <th width="17%" align="center">MINDE</th>
-    <th width="17%" align="center">MIENF</th>
-    <th width="17%" align="center">VCE (ours)</th>
+    <th align="center">MINE</th>
+    <th align="center">InfoNCE</th>
+    <th align="center">MINDE</th>
+    <th align="center">MIENF</th>
+    <th align="center">VCE (ours)</th>
   </tr>
   <tr>
-    <td align="center"><b>Exec time</b></td>
     <td align="center">184s</td>
     <td align="center">751s</td>
     <td align="center">162s</td>
