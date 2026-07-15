@@ -127,7 +127,7 @@ notebook that samples the data, runs the estimators, and reports MI against grou
 
 ## 📈 Performance Overview
 
-**Estimation accuracy across four benchmarks**. VCE consistently ranks in the top 2 (most robust).
+**Estimation accuracy across four benchmarks**
 
 ![Accuracy vs. dimensionality](results/benchmark_scan_all_dim.png)
 
@@ -143,14 +143,14 @@ notebook that samples the data, runs the estimators, and reports MI against grou
   </tr>
   <tr>
     <td align="center">184s</td>
-    <td align="center">751s</td>
-    <td align="center">162s</td>
+    <td align="center">752s</td>
+    <td align="center">157s</td>
     <td align="center">567s</td>
     <td align="center">291s</td>
   </tr>
 </table>
 
-You can reproduce using `python run_bench.py`.
+You can reproduce using `python run_bench.py`. VCE is not always the best, but is accurate (average #1) and efficient (average #3).
 
 ## 📁 Project Structure
 
