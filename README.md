@@ -29,7 +29,7 @@
 
 - **Disentangles marginals and dependence** — isolates marginal effects from the
   dependence structure.
-- **Test-time search of the optimal copula** — train *N* candidate copulas jointly, then choose 
+- **Test-time search of optimal copula** — train *N* candidate copulas jointly, then choose 
   the optimal combination.
 - **6 estimators in one interface** — all share `learn(x, y)` / `MI(x, y)`.
 - **7 benchmarks with ground-truth MI** — heavy-tailed, nonlinear, manifold, and image data.
