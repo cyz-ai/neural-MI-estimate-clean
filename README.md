@@ -114,7 +114,7 @@ through the shared `optimizer.py` (Adam, 80/20 split, early stopping).
 Key VCE parameters (attributes on the `Hyperparams` object):
 
 - `K_components` — copula mixture component count (default 32)
-- `n_restarts` — best-of-*N* copula fits, run in parallel (default 4)
+- `n_restarts` — best-of-*N* copula fits, run in parallel (default 8; guards against the rare all-restart collapse that a smaller count can hit on high-dimensional data)
 - `bon_selection` — whether to run the test-time copula search (default `True`)
 
 ## 📊 Benchmarks

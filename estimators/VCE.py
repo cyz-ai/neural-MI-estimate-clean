@@ -24,7 +24,7 @@ class VCE(nn.Module):
         # Only K and the restart count are configurable; the copula's optimizer hyperparams
         # (lr=0.02, bs=1000) are hardcoded in nde.MoG.MoG (established sweet spot, not tuned per-run).
         self.K_components = 32 if not hasattr(hyperparams, 'K_components') else hyperparams.K_components            # <- number of mixture components in the copula MoG
-        self.n_restarts = 4 if not hasattr(hyperparams, 'n_restarts') else hyperparams.n_restarts                   # <- number of copula restarts (jointly trained, lowest-NLL one kept)
+        self.n_restarts = 8 if not hasattr(hyperparams, 'n_restarts') else hyperparams.n_restarts                   # <- number of copula restarts (jointly trained, lowest-NLL one kept); 8 avoids the all-restart collapse seen at 4 on high-dim data
 
         self.bon_selection = True if not hasattr(hyperparams, 'bon_selection') else hyperparams.bon_selection
         self.marginal_flow = 'FM' if not hasattr(hyperparams, 'marginal_flow') else hyperparams.marginal_flow
